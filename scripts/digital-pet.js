@@ -19,6 +19,8 @@ class Need {
     #implosionStep = 0;
 
     // public
+    emptyOnExplosion = false;
+    fillOnImplosion = false;
 
     // public events
     onChangeEvent = null;
@@ -59,18 +61,18 @@ class Need {
         this.setValue(value + this.value);
     }
 
-    // Call fill to add 1 to the value
+    // Call fill to add 1 to the value.
     inc() {
         this.fill(1); 
     }
 
-    // Call fill to subtract one from the value
+    // Call fill to subtract one from the value.
     dec() {
         this.fill(-1);
     }
 
     isFull() {
-        // if max is 0, then let's not assume we are full
+        // If max is 0, then let us not assume we are full.
         return (this.value == this.#max) && (this.#max > 0);
     }
 
@@ -79,17 +81,17 @@ class Need {
     }
 
     setValue (val) {
-        // Save the previous value for calling any events
+        // Save the previous value for calling any events.
         let previousValue = this.value;
 
         // if it is less than min or greather than max then use min or max respectively.
         let newValue = Math.min(Math.max(val, this.#min), this.#max);
 
-        // No need to do anything if the value hasn't actually changed
+        // No need to do anything if the value hasn't actually changed.
         if (previousValue !== newValue) {
             this.value = newValue;
            
-            // Handle any value changing events
+            // Handle any value changing events.
             this.#__onChange({
                 previousValue: previousValue,
                 currentValue: this.value,
@@ -99,8 +101,8 @@ class Need {
         }
     }
 
-    // we can create a common function that both #__onFull and #__onEmpty can call
-    #__onThresholdReached(e, chance, baseEventChance, eventStep, thresholdReachedEvent, specialEvent) {
+    // We can create a common function that both #__onFull and #__onEmpty can call.
+    #__onThresholdReached(e, chance, baseEventChance, eventStep, thresholdReachedEvent, specialEvent, empty, fill) {
         if (thresholdReachedEvent) {
             // Call the event to let the implementor handle it
             thresholdReachedEvent(e);
@@ -109,15 +111,23 @@ class Need {
         if (specialEvent) { 
             // Check to see if we should do something.
             if (percentile(chance)) {
-                // It looks like the threshold event was fired
-                // Call the event to let the implementor handle it
+                // It looks like the threshold event was fired.
+                // Call the event to let the implementor handle it.
                 specialEvent(e);
+
+                if (empty) {
+                    this.currentValue = this.#min;
+                }
+
+                if (fill) {
+                    this.currentValue = this.#max;
+                }
 
                 // Reset it now that we have performed the event
                 return baseEventChance;
             }
             else {
-                // We didn't perform the event, so let's increase the chance for next time
+                // We didn't perform the event, so let's increase the chance for next time.
                 return chance + eventStep;
             }
         }
@@ -126,11 +136,25 @@ class Need {
     }
 
     #__onFull (e) {
-        this.#explosionChance = this.#__onThresholdReached(e, this.#explosionChance, this.#baseExplosionChance, this.#explosionStep, this.onFullEvent, this.onExplosionEvent);
+        this.#explosionChance = this.#__onThresholdReached(e,
+            this.#explosionChance,
+            this.#baseExplosionChance,
+            this.#explosionStep,
+            this.onFullEvent,
+            this.onExplosionEvent,
+            this.emptyOnExplosion,
+            false);
     }
 
     #__onEmpty (e) {
-        this.#implosionChance = this.#__onThresholdReached(e, this.#implosionChance, this.#baseImplosionChance, this.#implosionStep, this.onEmptyEvent, this.onImplosionEvent);
+        this.#implosionChance = this.#__onThresholdReached(e,
+            this.#implosionChance,
+            this.#baseImplosionChance,
+            this.#implosionStep,
+            this.onEmptyEvent,
+            this.onImplosionEvent,
+            false,
+            this.fillOnImplosion);
     }
 
     #__onChange(e) {
@@ -176,6 +200,7 @@ class Pet {
         this.hunger = new Need(0, 0, valueIsUndefined(hungerThreashold) ? 5 : hungerThreashold, 20, 10);
         this.hunger.onEmptyEvent = function (e) { pet.onPetEmptyHunger(e); };
         this.hunger.onFullEvent = function (e) { pet.onPetFullHunger(e); };
+        this.hunger.onChangeEvent = function (e) { pet.onPetChangeHunger(e); };
         this.hunger.onExplosionEvent = function (e) { pet.onHaveToPuke(e); };
 
         this.happiness = new Need(5, 0, valueIsUndefined(happinessThreashold) ? 10 : happinessThreashold, 30, 10, 30, 10);
@@ -201,6 +226,7 @@ class Pet {
 
     onPetFullHealth(e) {
         this.do(`${this.name} is in perfect health.`);
+        this.dance();
     }
 
     // Hunger
@@ -210,6 +236,36 @@ class Pet {
 
     onPetFullHunger(e) {
         this.do(`${this.name} is starving.`);
+        this.cry()
+    }
+
+    // Not sure I like the name of this, but I really do like consistency
+    onPetChangeHunger(e) {
+        // Special things happen when we are full or empty so we'll handle it there.
+        let fullOrEmpty = (e.currentValue <= e.minValue) || (e.currentValue >=e.maxValue);
+        // If the hunger increased.
+        if (!fullOrEmpty) {
+            let happinessChance = Math.floor((e.currentValue/e.maxValue) * 100);
+            if (e.previousValue < e.currentValue) {
+                // Give it a chance to decrease happiness.
+                if (percentile(happinessChance)) {
+                    this.happiness.dec();
+                }
+            }
+            // If hunger decrease.
+            else if (e.previousValue > e.currentValue) {
+                // Give it a chance to increase happiness.
+                if (percentile(happinessChance)) {
+                    this.happiness.inc();
+                }
+
+                // give it a chance to increase your bowels
+                let poopChance = 10;
+                if (percentile(poopChance)) {
+                    this.bowels.inc();
+                }
+            }
+        }
     }
 
     onHaveToPuke(e) {
@@ -219,15 +275,18 @@ class Pet {
     // Happiness
     onPetEmptyHappiness(e) {
         this.do(`${this.name} is very upset.`);
+        this.cry();
     }
 
     onPetFullHappiness(e) {
         this.do(`${this.name} is bursting with happines!`);
+        this.dance();
     }
 
     // Bowels
     onPetEmptyBowels(e) {
         this.do(`${this.name} Feels much better.`);
+        this.cheer();
     }
 
     onPetFullBowels(e) {
@@ -243,8 +302,12 @@ class Pet {
         this.do(`${this.name} dances a happy little dance`);
     }
 
-    die () {
+    die() {
         this.do(`${this.name} died! RIP`);
+    }
+
+    cry() {
+        this.do(`${this.name} cries! Boohoo.`);
     }
 
     move(where) {
@@ -298,6 +361,7 @@ class Pet {
             console.log(what);
         }
     }
+
     // Some helper methods and overrides
     getStatsAsString() {
         return `${this.name}\r\n\tHealth: ${this.health}\r\n\tHunger: ${this.hunger}\r\n\tHappiness ${this.happiness}\r\n\tBowels: ${this.bowels}`;
@@ -309,5 +373,21 @@ class Pet {
 
     toHtml() {
         return this.getStatsAsHtml();
+    }
+
+    // Some global stuff to be called by the game state
+    timerTicked() {
+        // Set a change for the hunger to go up.
+        const hungerChance = 10;
+        const poopChance = 10;
+        
+        // 10% chance to get hungry
+        if (percentile(hungerChance)) {
+            this.hunger.inc();
+        }
+        
+        if (percentile(poopChance)) {
+            this.bowels.inc();
+        }
     }
 }

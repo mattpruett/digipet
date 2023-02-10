@@ -23,8 +23,9 @@
 				Your browser does not support the HTML5 canvas tag.
 			</canvas>
 		</div>
-
-        <script>            
+		<a href="other\thanks.html">Special Thanks</a>
+        <script>
+			// TODO: Move most of this to a game class.
 			"use strict";
 			var canvas;
 			var context;
@@ -32,7 +33,7 @@
 			window.onload = init;
 			
 			function init() {
-				// Get a reference to the canvas
+				// Get a reference to the canvas.
 				canvas = document.getElementById('canvas');
 				context = canvas.getContext('2d');
 
@@ -46,10 +47,10 @@
 			
 			function draw() {
 
-				// Get a random color, red or blue
+				// Get a random color, red or blue.
 				let randomColor = Math.random() > 0.5 ? '#ff8080' : '#0099b0';
 
-				// Draw a rectangle
+				// Draw a rectangle.
 				context.fillStyle = randomColor;
 				context.fillRect(100, 50, 200, 175);
 			}
@@ -66,6 +67,23 @@
 
 			function refreshPetStats() {
 				$("#pet-stats").html(cat.toHtml());
+			}
+
+			// Every second.
+			const timerTickMS = 1000;
+			var timer = setInterval(gameTimerTicked, timerTickMS);
+			var totalTicks = 0;
+			function gameTimerTicked() {
+				// Every 10 ticks - or 10 seconds - we are going to have the pet do its thing.
+				const petTimerTickInterval = 10;
+
+				// If this is the 10th time, call the pets tick event.
+				if ((totalTicks % petTimerTickInterval) === 0) {
+					cat.timerTicked();
+					// Then redraw the pet and stats.
+					refreshPetStats();
+				}
+				totalTicks++;
 			}
         </script>
     </body>
