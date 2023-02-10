@@ -5,6 +5,10 @@ const direction = {
     down: 3
 }
 
+const petType = {
+    cat: "Cat"
+}
+
 class Need {
     // private
 
@@ -187,7 +191,7 @@ class Pet {
     bowels = null;
     outputLocation = null;
 
-    constructor(outputLocation, healthThreashold, hungerThreashold, happinessThreashold, bowelsThreashold) {
+    constructor(outputLocation, petType, healthThreashold, hungerThreashold, happinessThreashold, bowelsThreashold) {
         // This is a bit of a hack to work around the fact that "this" clashes when calling events.
         // I don't like it, but it's a simple solution.
         // Perhaps I can implement a better one in the future.
@@ -212,6 +216,8 @@ class Pet {
         this.bowels.onFullEvent = function (e) { pet.onPetFullBowels(e); };
 
         this.outputLocation = outputLocation;
+
+        this.type = petType;
     }
 
     feed() {
@@ -291,6 +297,7 @@ class Pet {
 
     onPetFullBowels(e) {
         this.do(`${this.name} pooped. Yuck!`);
+        this.bowels.empty();
     }
 
     // pet actions
@@ -331,7 +338,7 @@ class Pet {
     }
 
     getStatsAsHtml() {
-        let table = $("<table style='width:100%'></table>");
+        let table = $("<table>");
 
         table.append("<tr><th>Name</th><th>Health</th><th>Hunger</th><th>Happiness</th><th>Bowels</th></tr>");
         
@@ -349,13 +356,13 @@ class Pet {
 
         table.append(row);
 
-        return table.html();
+        return table[0].outerHTML;
     }
 
     do(what) {
         // TODO: Eventually we will have fun visual stuff going on here.
         if (!isUndefined(this.outputLocation)) {
-            this.outputLocation.text(what);
+            this.outputLocation.log(what);
         }
         else {
             console.log(what);
@@ -376,8 +383,12 @@ class Pet {
     }
 
     // Some global stuff to be called by the game state
+    #tick = 0;
     timerTicked() {
         // Set a change for the hunger to go up.
+        this.#tick++
+        this.do(`tick ${this.#tick}`);
+
         const hungerChance = 10;
         const poopChance = 10;
         
