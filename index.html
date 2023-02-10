@@ -7,29 +7,65 @@
         <meta name="description" content="A basic HTML5 Canvas Test">
         <meta name="author" content="Matthew J Pruett">
 		
+		<!-- Styles -->
+		<!-- Maybe we will host this ourselves in the future. -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+		<!-- Google Fonts -->
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Press+Start+2P">
+
+		<!-- Scripts -->
 		<script src="scripts/random.js"></script>
 		<script src="scripts/generics.js"></script>
 		<script src="scripts/digital-pet.js"></script>
+		<script src="scripts/game.js"></script>
+		<script src="scripts/game-logger.js"></script>
+
 		<!-- Maybe we will host this ourselves in the future. -->
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+
+		<!-- Custom CSS. TODO: Move to separate document-->
+		<style>
+			.digital {
+				font-family: 'Press Start 2P'
+			}
+
+			table, td, th, tbody {
+				border-width: 4px;
+				border-color: black;
+				border-style: solid !important;
+				padding-left: 9px;
+				padding-right: 4px;
+			}
+		</style>
     </head>
     <body>
 		<input type="button" value="Feed Pet" onclick="feedPet();"/>
 		<input type="button" value="Starve Pet" onclick="starvePet();"/>
-		<div id="pet-stats" style="width:100%"></div>
-		<div id="pet-output" style="width:100%"></div>
-		<div style="margin: auto;">
-			<canvas id="canvas" width="750" height="400" style="border:1px solid lightgrey;">
-				Your browser does not support the HTML5 canvas tag.
-			</canvas>
+
+		<div id="pet-stats" style="width:100%" class="digital"></div><br/>
+
+		<div class="row">
+			<div class="col-md-8" id="game-screen">
+				<canvas id="canvas" height="400" style="border:1px solid lightgray;background-color: lightpink;">
+					Your browser does not support the HTML5 canvas tag.
+				</canvas>
+			</div>
+			<div  class="col-md-4" id="pet-output">
+				<!-- Log text goes here. -->
+			</div>
 		</div>
 		<a href="other\thanks.html">Special Thanks</a>
         <script>
-			// TODO: Move most of this to a game class.
+			
 			"use strict";
+
+			// Some globals.
 			var canvas;
 			var context;
 			var cat;
+			var gameLoop;
+			var logger;
+
 			window.onload = init;
 			
 			function init() {
@@ -37,12 +73,22 @@
 				canvas = document.getElementById('canvas');
 				context = canvas.getContext('2d');
 
+				context.canvas.width  = $("#game-screen").innerWidth();
+				//context.height = $("#game-screen").innerHeight;
+
+				logger = new gameLogger($("#pet-output"))
+
 				draw();
 				
-				cat = new Pet($("#pet-output"));
+				cat = new Pet(logger, petType.cat);
 				cat.name = "Link";
-				cat.type = "Cat";
 				refreshPetStats();
+
+				gameLoop = new game(canvas);
+
+				// Every second.
+				const timerTickMS = 1000;
+				gameLoop.start(gameTimerTicked, timerTickMS);
 			}
 			
 			function draw() {
@@ -69,9 +115,6 @@
 				$("#pet-stats").html(cat.toHtml());
 			}
 
-			// Every second.
-			const timerTickMS = 1000;
-			var timer = setInterval(gameTimerTicked, timerTickMS);
 			var totalTicks = 0;
 			function gameTimerTicked() {
 				// Every 10 ticks - or 10 seconds - we are going to have the pet do its thing.
