@@ -16,6 +16,7 @@
 		<!-- Scripts -->
 		<script src="scripts/random.js"></script>
 		<script src="scripts/generics.js"></script>
+		<script src="scripts/drawing-lib.js"></script>
 		<script src="scripts/digital-pet.js"></script>
 		<script src="scripts/game.js"></script>
 		<script src="scripts/game-logger.js"></script>
@@ -39,67 +40,20 @@
 		</style>
     </head>
     <body>
-		<input type="button" value="Feed Pet" onclick="feedPet();"/>
-		<input type="button" value="Starve Pet" onclick="starvePet();"/>
-
-		<div id="pet-stats" style="width:100%" class="digital"></div><br/>
-
-		<div class="row">
-			<div class="col-md-8" id="game-screen">
-				<canvas id="canvas" height="400" style="border:1px solid lightgray;background-color: lightpink;">
-					Your browser does not support the HTML5 canvas tag.
-				</canvas>
-			</div>
-			<div  class="col-md-4" id="pet-output">
-				<!-- Log text goes here. -->
-			</div>
+		<div class="row" id="game">
+			<!-- The game will be placed here when we call $("#game").initGame()-->
 		</div>
+
 		<a href="other\thanks.html">Special Thanks</a>
+		
         <script>
-			
-			"use strict";
-
-			// Some globals.
-			var canvas;
-			var context;
-			var cat;
-			var gameLoop;
-			var logger;
-
-			window.onload = init;
-			
-			function init() {
-				// Get a reference to the canvas.
-				canvas = document.getElementById('canvas');
-				context = canvas.getContext('2d');
-
-				context.canvas.width  = $("#game-screen").innerWidth();
-				//context.height = $("#game-screen").innerHeight;
-
-				logger = new gameLogger($("#pet-output"))
-
-				draw();
-				
-				cat = new Pet(logger, petType.cat);
-				cat.name = "Link";
-				refreshPetStats();
-
-				gameLoop = new game(canvas);
-
-				// Every second.
+			jQuery.fn.initGame = initializeGame;
+			$(function() {
 				const timerTickMS = 1000;
-				gameLoop.start(gameTimerTicked, timerTickMS);
-			}
-			
-			function draw() {
+				$("#game").initGame(timerTickMS);
+			});
 
-				// Get a random color, red or blue.
-				let randomColor = Math.random() > 0.5 ? '#ff8080' : '#0099b0';
-
-				// Draw a rectangle.
-				context.fillStyle = randomColor;
-				context.fillRect(100, 50, 200, 175);
-			}
+			"use strict";
 
 			function feedPet() {
 				cat.feed();
@@ -109,24 +63,6 @@
 			function starvePet() {
 				cat.hunger.inc();
 				refreshPetStats();
-			}
-
-			function refreshPetStats() {
-				$("#pet-stats").html(cat.toHtml());
-			}
-
-			var totalTicks = 0;
-			function gameTimerTicked() {
-				// Every 10 ticks - or 10 seconds - we are going to have the pet do its thing.
-				const petTimerTickInterval = 10;
-
-				// If this is the 10th time, call the pets tick event.
-				if ((totalTicks % petTimerTickInterval) === 0) {
-					cat.timerTicked();
-					// Then redraw the pet and stats.
-					refreshPetStats();
-				}
-				totalTicks++;
 			}
         </script>
     </body>
