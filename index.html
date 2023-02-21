@@ -40,13 +40,15 @@
 		</style>
     </head>
     <body>
+		<h1>Digital Pet Showcase</h1>
 		<div class="row" id="game">
 			<!-- The game will be placed here when we call $("#game").initGame()-->
 		</div>
 
 		<a href="other\thanks.html">Special Thanks</a>
-		
+
         <script>
+			// TODO: Somehow move this call to game.js
 			jQuery.fn.initGame = initializeGame;
 			$(function() {
 				const timerTickMS = 1000;

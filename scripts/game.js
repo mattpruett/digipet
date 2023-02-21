@@ -45,6 +45,7 @@ class game {
     context = null;
     Pet = null;
     logger = null;
+    toolBar = new gameToolBar();
 
     // constructor
     constructor() {
@@ -58,6 +59,8 @@ class game {
         let width = $("#game-screen").innerWidth();
         let height = $("#game-screen").innerHeight();
         this.context.canvas.width  = width;
+        
+        this.toolBar.addButton(new gameToolBarButton("assets/other/hamburger.png"));
         
         this.setBackground("assets/backgrounds/livingroom/livingroom.jpg", width, height);
     }
@@ -75,6 +78,7 @@ class game {
             else {
                 game.context.drawImage(game.background,0,0);
             }
+            game.drawToolbar();
         };
     }
 
@@ -118,5 +122,114 @@ class game {
     static gameRendered(frequency) {
         gameLoop = new game();
         gameLoop.start(frequency);        
+    }
+
+    drawToolbar () {
+        this.toolBar.draw(this.context, 20, 20);
+    }
+}
+
+class gameToolBar {
+    // Public
+    buttons = [];
+    posX = 5;
+    posY = 5;
+    margins = 5;
+
+    // Private
+    #toolbarWidth() {
+        let width = this.buttons.length  > 0 ? this.margins : 0;
+        for(let i = 0; i < this.buttons.length; i++) {
+            width += this.buttons[i].width + this.margins;
+        }
+        return width;
+    }
+
+    #toolbarHeight() {
+        let height = this.buttons.length > 0
+            // Find the button in our listh with the largest height.
+            ? Math.max.apply(Math, this.buttons.map(function(btn) { return btn.height; }))
+            : 0;
+        // Margins x 2 = top and bottom.
+        return height + (this.margins * 2);
+    }
+
+    addButton(button) {
+        if (button instanceof gameToolBarButton) {
+            this.buttons.push(button);
+        }
+    }
+
+    draw(context, offsetX, offsetY) {
+        this.#drawBar(context, offsetX, offsetY);
+    }
+
+    #drawBar(context, offsetX, offsetY) {
+        // Set transparency value
+        context.globalAlpha = 0.35;
+
+        context.fillStyle = 'magenta';
+        const width = this.#toolbarWidth();
+        const height = this.#toolbarHeight();
+        context.roundRect(offsetX, offsetY, width, height, [7.5]);
+        context.fill();
+        //context.fillRect(offsetX, offsetY, width, height);
+
+        // Set transparency value
+        context.globalAlpha = 1;
+
+        this.#drawButtons(context, offsetX, offsetY);
+    }
+    
+    #drawButtons(context, offsetX, offsetY) {
+        let dx = offsetX + this.margins;
+        const dy = offsetY + this.margins;
+        if (context) {
+            for (let i = 0; i < this.buttons.length; i++) {
+                let button = this.buttons[i];
+                button.x = dx;
+                button.y = dy;
+                button.draw(context, dx, dy);
+                dx += button.width + this.margins;
+            }
+        }
+    }
+}
+
+class gameToolBarButton {
+    // Public
+    width = 30;
+    height = 30;
+    image = new Image();
+    x = 0;
+    y = 0;
+
+    constructor(imageLocation) {
+        let button = this;
+        this.image.src = imageLocation;
+        $(document).on('mousemove', function(e) { gameToolBarButton.__mouseMove(e, button); });
+
+    }
+
+    draw(context, x, y) {
+        this.x = x;
+        this.y = y;
+        context.drawImage(this.image, this.x, this.y, this.width, this.height);
+    }
+
+    static __mouseMove(e, button) {
+        const x = button.x;
+        const y = button.y;
+
+        const cX = e.pageX;
+        const cY = e.pageY;
+        
+        if(cX > x && cY > y && cX < x + button.width && cY < y + button.height) {
+            canvas.style.cursor = "pointer";
+        }
+        else {
+            canvas.style.cursor = "default";
+        }
+        // TODO:
     }
 }

@@ -1,3 +1,7 @@
+// Drawing documentation:
+//  - https://spicyyoghurt.com/tutorials/html5-javascript-game-development/images-and-sprite-animations
+//  - https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D
+//  - https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/stroke
 function setCanvasContextBackroundImage(context, imageLocation, width, height) {
     if (imageLocation && context) {
         var background = new Image();
