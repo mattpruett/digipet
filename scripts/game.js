@@ -247,13 +247,13 @@ class gameToolBarButton {
         const right = buttonRect.left + buttonRect.width;
         const bottom = buttonRect.top + buttonRect.height;
 
-        // past the left
+        // Past the left.
         return mousePos.x > buttonRect.left 
-            // below the top 
+            // Below the top.
             && mousePos.y > buttonRect.top 
-            // not beyond the right
+            // Not beyond the right.
             && mousePos.x < right 
-            // and not past the bottom
+            // And not past the bottom.
             && mousePos.y < bottom;
     }
 }
