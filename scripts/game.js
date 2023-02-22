@@ -218,18 +218,42 @@ class gameToolBarButton {
     }
 
     static __mouseMove(e, button) {
-        const x = button.x;
-        const y = button.y;
+        const rect = canvas.getBoundingClientRect();
+
+        const x = rect.left + button.x;
+        const y = rect.top + button.y;
 
         const cX = e.pageX;
         const cY = e.pageY;
         
-        if(cX > x && cY > y && cX < x + button.width && cY < y + button.height) {
-            canvas.style.cursor = "pointer";
-        }
-        else {
-            canvas.style.cursor = "default";
-        }
-        // TODO:
+
+        // If pointer is hovering over the button.
+        canvas.style.cursor = gameToolBarButton.#pointInRect({
+            x: e.pageX,
+            y: e.pageY
+        }, {
+            left: x,
+            top: y,
+            width: button.width,
+            height: button.height
+        })
+            // Draw a pointer cursor.
+            ? "pointer"
+            // Otherwise, draw the default cursor/
+            : "default";
+    }
+
+    static #pointInRect(mousePos, buttonRect) {
+        const right = buttonRect.left + buttonRect.width;
+        const bottom = buttonRect.top + buttonRect.height;
+
+        // past the left
+        return mousePos.x > buttonRect.left 
+            // below the top 
+            && mousePos.y > buttonRect.top 
+            // not beyond the right
+            && mousePos.x < right 
+            // and not past the bottom
+            && mousePos.y < bottom;
     }
 }
