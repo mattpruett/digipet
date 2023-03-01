@@ -43,15 +43,15 @@ class game {
     background = new Image();
     canvas = null;
     context = null;
-    Pet = null;
+    pet = null;
     logger = null;
     toolBar = new gameToolBar();
 
     // constructor
     constructor() {
         this.logger = new gameLogger($("#pet-output"));
-        this.Pet = new Pet(this.logger, petType.cat);
-        this.Pet.name = "Link";
+        this.pet = new Pet(this.logger, petType.cat);
+        this.pet.name = "Link";
         this.refreshPetStats();
         this.canvas = document.getElementById('canvas');
         this.context = canvas.getContext('2d');
@@ -79,6 +79,7 @@ class game {
                 game.context.drawImage(game.background,0,0);
             }
             game.drawToolbar();
+            game.pet.idle(game.context);
         };
     }
 
@@ -96,7 +97,7 @@ class game {
     }
 
     refreshPetStats() {
-        $("#pet-stats").html(this.Pet.toHtml());
+        $("#pet-stats").html(this.pet.toHtml());
     }
     
     doGameLoop() {
@@ -105,7 +106,7 @@ class game {
 
         // If this is the 10th time, call the pets tick event.
         if ((this.#totalTicks % petTimerTickInterval) === 0) {
-            this.Pet.timerTicked();
+            this.pet.timerTicked();
             // Then redraw the pet and stats.
             this.refreshPetStats();
         }

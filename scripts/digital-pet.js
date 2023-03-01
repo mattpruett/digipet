@@ -190,8 +190,9 @@ class Pet {
     happiness = null;
     bowels = null;
     outputLocation = null;
+    sprite = null;
 
-    constructor(outputLocation, petType, healthThreashold, hungerThreashold, happinessThreashold, bowelsThreashold) {
+    constructor(outputLocation, animalType, healthThreashold, hungerThreashold, happinessThreashold, bowelsThreashold) {
         // This is a bit of a hack to work around the fact that "this" clashes when calling events.
         // I don't like it, but it's a simple solution.
         // Perhaps I can implement a better one in the future.
@@ -217,7 +218,10 @@ class Pet {
 
         this.outputLocation = outputLocation;
 
-        this.type = petType;
+        this.type = animalType;
+        if (this.type === petType.cat) {
+            this.sprite = sprite.cat();
+        }
     }
 
     feed() {
@@ -317,6 +321,11 @@ class Pet {
         this.do(`${this.name} cries! Boohoo.`);
     }
 
+    idle(context) {
+        let pos = this.#getCurrentPosition();
+        this.sprite.idle(context, pos.x, pos.y, 1);
+    }
+
     move(where) {
         switch(where) {
             case direction.left:
@@ -400,5 +409,11 @@ class Pet {
         if (percentile(poopChance)) {
             this.bowels.inc();
         }
+    }
+
+    // Private methods.
+    #getCurrentPosition() {
+        // TODO
+        return { x: 400, y: 300 };
     }
 }
