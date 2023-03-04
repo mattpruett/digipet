@@ -192,6 +192,8 @@ class Pet {
     outputLocation = null;
     sprite = null;
 
+    #location = { x: 0, y: 0 };
+
     constructor(outputLocation, animalType, healthThreashold, hungerThreashold, happinessThreashold, bowelsThreashold) {
         // This is a bit of a hack to work around the fact that "this" clashes when calling events.
         // I don't like it, but it's a simple solution.
@@ -304,6 +306,11 @@ class Pet {
         this.bowels.empty();
     }
 
+    draw(context) {
+        // TODO: calculate what to draw here based on pet's logic
+        this.idle(context);
+    }
+
     // pet actions
     cheer() {
         this.do(`${this.name} cheers! Hurray!`);
@@ -323,6 +330,7 @@ class Pet {
 
     idle(context) {
         let pos = this.#getCurrentPosition();
+        
         this.sprite.idle(context, pos.x, pos.y, 1);
     }
 
@@ -411,9 +419,13 @@ class Pet {
         }
     }
 
+    setLocation(loc) {
+        this.#location.x = loc.x;
+        this.#location.y = loc.y;
+    }
+
     // Private methods.
     #getCurrentPosition() {
-        // TODO
-        return { x: 400, y: 300 };
+        return this.#location;
     }
 }

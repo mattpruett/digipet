@@ -34,14 +34,30 @@ class spriteSheet {
             this.#animationSettings.rate       = settings.rate         ? settings.rate       : 0;
             this.#animationSettings.frameCount = settings.frameCount   ? settings.frameCount : 0;
             this.#animationSettings.scale      = settings.scale        ? settings.scale      : 1;
+            this.#animationSettings.speed      = settings.speed        ? settings.speed      : 1;
+
+            this.#animationSettings.lastFrameDrawn = 0;
         }
     }
 
     animate(context, x, y, totalFrames) {
         if (this.#animationSettings) {
-            // For now, draw frame 0 but eventually use totalFrames 
-            // to perform the animation.
-            this.#drawFrame(context, 0, 0, x, y, this.#animationSettings);
+            const settings = this.#animationSettings;
+            // TODO: There's probably a fancy mathmatical way to solve this.
+            // It would be fun to try and figure that out. But for now, this
+            // is easer to follow.
+            
+            // Speed is how frequently we want to move on to the next frame in animation.
+            // If we reached that point...
+            let currentFrame = (totalFrames % settings.speed) == 0 
+                // then, we incriment the current frame and move to the next frame
+                // or reset to 0 if we reached the last frame.
+                ? ++this.#animationSettings.lastFrameDrawn % settings.frameCount
+                // Otherwise, we stick to whatever frame we last drew
+                : this.#animationSettings.lastFrameDrawn;
+                
+            this.#animationSettings.lastFrameDrawn = currentFrame;
+            this.#drawFrame(context, currentFrame, 0, x, y, this.#animationSettings);
         }
     }
     
@@ -72,8 +88,9 @@ class spriteSheet {
 }
 
 class sprite {
+    #lastAnimation = -1;
     #sheets = new Object(null);
-
+    #animationFrameCount = 0;
     addSheet(type, source, settings) {
         if (!valueIsUndefined(type) && source && valueIsUndefined(this.#sheets[type])) {
             this.#sheets[type] = new spriteSheet(source);
@@ -98,22 +115,27 @@ class sprite {
         }
     }
     
-    idle(context, x, y, totalFrames) {
-         this.#doAnimation(spriteAnimationType.idle, context, x, y, totalFrames);
+    idle(context, x, y) {
+        this.#doAnimation(spriteAnimationType.idle, context, x, y);
     }
     
-    walk(direction, context, x, y, totalFrames) {
-        this.#doAnimation(spriteAnimationType.walk, context, x, y, totalFrames);
+    walk(direction, context, x, y) {
+        this.#doAnimation(spriteAnimationType.walk, context, x, y);
     }
     
-    fight(context, x, y, totalFrames) {
-        this.#doAnimation(spriteAnimationType.fight, context, x, y, totalFrames);
+    fight(context, x, y) {
+        this.#doAnimation(spriteAnimationType.fight, context, x, y);
     }
 
-    #doAnimation(animationType, context, x, y, totalFrames) {
+    #doAnimation(animationType, context, x, y) {
+        this.#animationFrameCount = this.#lastAnimation == animationType || this.#animationFrameCount >= Number.MAX_VALUE
+            ? this.#animationFrameCount + 1
+            : 0;
+
         if (!valueIsUndefined(this.#sheets[animationType])) {
-            this.#sheets[animationType].animate(context, x, y, totalFrames);
+            this.#sheets[animationType].animate(context, x, y, this.#animationFrameCount);
         }
+        this.#lastAnimation = animationType;
     }
 
     static cat() {
@@ -122,10 +144,11 @@ class sprite {
             offsetX: 0,
             offsetY: 0,
             height: 16.5,
-            width: 16,
+            width: 17,
             rate: 1,
             frameCount: 2,
-            scale: 4
+            scale: 4,
+            speed: 50
         });
         return cat;
     }

@@ -59,6 +59,8 @@ class game {
         let width = $("#game-screen").innerWidth();
         let height = $("#game-screen").innerHeight();
         this.context.canvas.width  = width;
+
+        this.pet.setLocation({x: 400, y: 300});
         
         this.toolBar.addButton(new gameToolBarButton("assets/other/hamburger.png"));
         
@@ -83,10 +85,6 @@ class game {
         };
     }
 
-    start(interval, parameters) {
-        this.#timer = setInterval(function (params) { params.doGameLoop(); }, interval, this);
-    }
-
     onBackgroundLoad() {
         if (width && height) {
             this.context.drawImage(this.background,0,0, width, height);
@@ -101,8 +99,13 @@ class game {
     }
     
     doGameLoop() {
-        // Every 10 ticks - or 10 seconds - we are going to have the pet do its thing.
-        const petTimerTickInterval = 10;
+        // Every 300 ticks - or 5 seconds - we are going to have the pet do its thing.
+        const petTimerTickInterval = 300;
+
+        this.clearCanvas();
+
+        this.refresh();
+
 
         // If this is the 10th time, call the pets tick event.
         if ((this.#totalTicks % petTimerTickInterval) === 0) {
@@ -113,20 +116,40 @@ class game {
         this.#totalTicks++;
     }
 
+    drawToolbar () {
+        this.toolBar.draw(this.context, 20, 20);
+    }
+
+    clearCanvas() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
     refresh() {
+        this.drawBackground();
+        this.pet.draw(this.context);
+        this.drawToolbar();
+    }
+
+    drawBackground() {
         let width = $("#game-screen").innerWidth();
         let height = $("#game-screen").innerHeight();
         this.context.canvas.width  = width;
-        this.context.drawImage(this.background, 0, 0, width, height);
+        this.context.drawImage(this.background,0,0, width, height);
     }
 
+    start() {
+        window.requestAnimationFrame(game.gameStep);
+    }
+
+    // Static functions.
     static gameRendered(frequency) {
         gameLoop = new game();
-        gameLoop.start(frequency);        
+        gameLoop.start();        
     }
 
-    drawToolbar () {
-        this.toolBar.draw(this.context, 20, 20);
+    static gameStep(timeStamp) {
+        gameLoop.doGameLoop();
+        window.requestAnimationFrame(game.gameStep);
     }
 }
 
