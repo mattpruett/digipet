@@ -9,6 +9,11 @@ const petType = {
     cat: "Cat"
 }
 
+const petState = {
+    idling: 0,
+    walking: 1
+}
+
 class Need {
     // private
 
@@ -57,7 +62,7 @@ class Need {
     empty() {
         this.value = this.#min;
 
-        this.__onChange();
+        this.#__onChange();
     }
 
     // Add the given value to our current value
@@ -191,6 +196,7 @@ class Pet {
     bowels = null;
     outputLocation = null;
     sprite = null;
+    state = petState.walking;
 
     #location = { x: 0, y: 0 };
 
@@ -308,7 +314,7 @@ class Pet {
 
     draw(context) {
         // TODO: calculate what to draw here based on pet's logic
-        this.idle(context);
+        this.drawState(context);
     }
 
     // pet actions
@@ -331,25 +337,34 @@ class Pet {
     idle(context) {
         let pos = this.#getCurrentPosition();
         
-        this.sprite.idle(context, pos.x, pos.y, 1);
+        this.sprite.blink(context, pos.x, pos.y);
     }
 
-    move(where) {
-        switch(where) {
-            case direction.left:
-                this.do(`${this.name} moved left`);
+    blink(context) {
+        let pos = this.#getCurrentPosition();
+        
+        this.sprite.blink(context, pos.x, pos.y);
+    }
+
+    move(context, where) {
+        let pos = this.#getCurrentPosition();
+        let walkResults = this.sprite.walk(where, context, pos.x, pos.y);
+
+        this.#setCurrentPosition(walkResults);
+
+        // If we hit the side of the screen, switch to idling.
+        if (walkResults.switchState) {
+            this.state = petState.idling;
+        }
+    }
+
+    drawState(context) {
+        switch (this.state) {
+            case petState.idling:
+                this.idle(context);
                 break;
-            
-            case direction.right:
-                this.do(`${this.name} moved right`);
-                break;
-            
-            case direction.up:
-                this.do(`${this.name} moved up`);
-                break;            
-            
-            case direction.down:
-                this.do(`${this.name} moved down`);
+            case petState.walking:
+                this.move(context, direction.left);
                 break;
         }
     }
@@ -427,5 +442,12 @@ class Pet {
     // Private methods.
     #getCurrentPosition() {
         return this.#location;
+    }
+
+    #setCurrentPosition(pos) {
+        if (!(valueIsUndefined(pos) || valueIsUndefined(pos.x) || valueIsUndefined(pos.y))) {
+            this.#location.x = pos.x;
+            this.#location.y = pos.y;
+        }
     }
 }

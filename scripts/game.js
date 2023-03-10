@@ -263,7 +263,7 @@ class gameToolBarButton {
         })
             // Draw a pointer cursor.
             ? "pointer"
-            // Otherwise, draw the default cursor/
+            // Otherwise, draw the default cursor.
             : "default";
     }
 

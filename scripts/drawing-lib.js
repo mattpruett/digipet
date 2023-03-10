@@ -19,3 +19,11 @@ function setCanvasContextBackroundImage(context, imageLocation, width, height) {
         }
     }
 }
+
+function directionIsLateral(dir) {
+    return (dir == direction.right || dir == direction.left);
+}
+
+function directionIsVertical(dir) {
+    return (dir == direction.up || dir == direction.down);
+}
