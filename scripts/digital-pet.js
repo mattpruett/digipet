@@ -11,8 +11,16 @@ const petType = {
 
 const petState = {
     idling: 0,
-    walking: 1
+    walking: 1,
+    eyeShift: 2
 }
+
+// Keep this in order on what you want to check.
+const stateChangeTable = [    
+    { state: petState.idling, chance: 40, directions: [ direction.left, direction.right ] },
+    { state: petState.eyeShift, chance: 10, directions: [ direction.left ] },
+    { state: petState.walking, chance: 1, directions: [ direction.left, direction.right ] }
+]
 
 class Need {
     // private
@@ -199,6 +207,8 @@ class Pet {
     state = petState.walking;
 
     #location = { x: 0, y: 0 };
+    #totalTicks = 0;
+    #currentDirection = direction.right;
 
     constructor(outputLocation, animalType, healthThreashold, hungerThreashold, happinessThreashold, bowelsThreashold) {
         // This is a bit of a hack to work around the fact that "this" clashes when calling events.
@@ -337,13 +347,13 @@ class Pet {
     idle(context) {
         let pos = this.#getCurrentPosition();
         
-        this.sprite.blink(context, pos.x, pos.y);
+        this.sprite.idle(context, pos.x, pos.y);
     }
 
-    blink(context) {
+    eyeShift(context) {
         let pos = this.#getCurrentPosition();
         
-        this.sprite.blink(context, pos.x, pos.y);
+        this.sprite.eyeShift(context, pos.x, pos.y);
     }
 
     move(context, where) {
@@ -359,12 +369,16 @@ class Pet {
     }
 
     drawState(context) {
+        this.#checkForStateChange();
         switch (this.state) {
             case petState.idling:
                 this.idle(context);
                 break;
             case petState.walking:
-                this.move(context, direction.left);
+                this.move(context, this.#currentDirection);
+                break;
+            case petState.eyeShift:
+                this.eyeShift(context, this.#currentDirection);
                 break;
         }
     }
@@ -448,6 +462,31 @@ class Pet {
         if (!(valueIsUndefined(pos) || valueIsUndefined(pos.x) || valueIsUndefined(pos.y))) {
             this.#location.x = pos.x;
             this.#location.y = pos.y;
+        }
+    }
+    
+    #checkForStateChange() {
+        // Let's test for a state change only 1 once every 100 ticks.
+        const stateChangeTick = 60;
+        if ((this.#totalTicks % stateChangeTick) == 0) {
+            let stateChange = null;
+            for(let i = 0; i < stateChangeTable.length; i++) {
+                stateChange = stateChangeTable[i];
+                // If hit the chance.
+                if (percentile(stateChange.chance)) {
+                    // Then change the state.
+                    this.state = stateChange.state;
+                    this.#currentDirection = stateChange.directions.length > 0 
+                        ? stateChange.directions[getRandomRange(0, stateChange.directions.length-1)]
+                        : this.#currentDirection;
+
+                    return;
+                }
+            }
+        }
+        this.#totalTicks++;
+        if (this.#totalTicks >= Number.MAX_SAFE_INTEGER) {
+            this.#totalTicks = 0;
         }
     }
 }
