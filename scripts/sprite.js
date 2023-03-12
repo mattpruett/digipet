@@ -2,7 +2,7 @@ const spriteAnimationType  = {
     idle: 0,
     walk: 1,
     fight: 2,
-    blink: 3
+    eyeShift: 3
 }
 
 class spriteSheet {
@@ -170,8 +170,8 @@ class sprite {
         return this.#doAnimation(spriteAnimationType.idle, context, x, y);
     }
     
-    blink(context, x, y) {
-        return this.#doAnimation(spriteAnimationType.blink, context, x, y);
+    eyeShift(context, x, y) {
+        return this.#doAnimation(spriteAnimationType.eyeShift, context, x, y);
     }
     
     walk(direction, context, x, y) {
@@ -201,7 +201,18 @@ class sprite {
         const catWidth = 17;
         const catScale = 4;
 
-        cat.addSheet(spriteAnimationType.blink, "assets/sprites/cat/cat_0/cat_0_idle_1.png", {
+        cat.addSheet(spriteAnimationType.idle, "assets/sprites/cat/cat_0/cat_0_idle_1.png", {
+            offsetX: 0,
+            offsetY: 0,
+            height: catHeight,
+            width: catWidth,
+            frameCount: 1,
+            scale: catScale,
+            speed: 1000,
+            doMove: false
+        });
+
+        cat.addSheet(spriteAnimationType.eyeShift, "assets/sprites/cat/cat_0/cat_0_idle_1.png", {
             offsetX: 0,
             offsetY: 0,
             height: catHeight,

@@ -12,7 +12,7 @@ function flipACoin(challenge) {
     // TODO
     // We may want to test against type here. It may not be a string
     // For now, we'll assume it's one of the coin const values
-    let desiredValue = challenge.toLowerCase() == "heads"
+    let desiredValue = challenge.toLowerCase() === "heads"
         ? 0
         : 1;
 
