@@ -15,7 +15,7 @@ const petState = {
     eyeShift: 2
 }
 
-// Keep this in order on what you want to check.
+// Keep this in order of what you want to check.
 const stateChangeTable = [    
     { state: petState.idling, chance: 40, directions: [ direction.left, direction.right ] },
     { state: petState.eyeShift, chance: 10, directions: [ direction.left ] },
@@ -451,6 +451,11 @@ class Pet {
     setLocation(loc) {
         this.#location.x = loc.x;
         this.#location.y = loc.y;
+    }
+
+    // Game tool Interactions
+    __toolDraggedOver(gameTool) {
+        
     }
 
     // Private methods.

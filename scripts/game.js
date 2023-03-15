@@ -62,9 +62,13 @@ class game {
 
         this.pet.setLocation({x: 400, y: 300});
         
-        this.toolBar.addButton(new gameToolBarButton("assets/other/hamburger.png"));
+        this.toolBar.addButton(new gameToolBarButton(this.canvas, "assets/other/hamburger.png", true));
         
         this.setBackground("assets/backgrounds/livingroom/livingroom.jpg", width, height);
+
+        let gameObject = this;
+        // Set events
+        canvas.onmousemove = function(e) { game.__mouseMove(e, gameObject); };
     }
 
     // Methods
@@ -141,6 +145,9 @@ class game {
         window.requestAnimationFrame(game.gameStep);
     }
 
+    // Mouse functions
+
+
     // Static functions.
     static gameRendered(frequency) {
         gameLoop = new game();
@@ -150,6 +157,16 @@ class game {
     static gameStep(timeStamp) {
         gameLoop.doGameLoop();
         window.requestAnimationFrame(game.gameStep);
+    }
+
+    static __mouseMove(e, game) {
+        // Do we need to decide the default cursor here        
+        canvas.style.cursor = "default";
+        refreshCoordinates(e.pageX, e.pageY);
+        if (game.toolBar.mouseInRect(e)) {
+            e.game = game;
+            game.toolBar.handleMouseMove(e);
+        }
     }
 }
 
@@ -171,11 +188,22 @@ class gameToolBar {
 
     #toolbarHeight() {
         let height = this.buttons.length > 0
-            // Find the button in our listh with the largest height.
+            // Find the button in our list with the largest height.
             ? Math.max.apply(Math, this.buttons.map(function(btn) { return btn.height; }))
             : 0;
         // Margins x 2 = top and bottom.
         return height + (this.margins * 2);
+    }
+
+    #toolbarRect() {
+        const rect = canvas.getBoundingClientRect();
+        
+        return {
+            left: rect.left + this.posX,
+            top: rect.top + this.posY,
+            width: this.#toolbarWidth(),
+            height: this.#toolbarHeight()
+        };
     }
 
     addButton(button) {
@@ -185,7 +213,19 @@ class gameToolBar {
     }
 
     draw(context, offsetX, offsetY) {
+        this.posX = offsetX;
+        this.posY = offsetY;
         this.#drawBar(context, offsetX, offsetY);
+    }
+
+    // Event responses
+    handleMouseMove(e) {
+        for(let i = 0; i < this.buttons.length; i++) {
+            if (gameToolBarButton.mouseInRect(e, this.buttons[i])) {
+                canvas.style.cursor = "pointer";
+                return;
+            }
+        }
     }
 
     #drawBar(context, offsetX, offsetY) {
@@ -197,7 +237,6 @@ class gameToolBar {
         const height = this.#toolbarHeight();
         context.roundRect(offsetX, offsetY, width, height, [7.5]);
         context.fill();
-        //context.fillRect(offsetX, offsetY, width, height);
 
         // Set transparency value
         context.globalAlpha = 1;
@@ -218,6 +257,29 @@ class gameToolBar {
             }
         }
     }
+
+    // Mouse and similar helper functions
+    pointInRect(pos) {
+        const rect = this.#toolbarRect();
+        const right = rect.left + rect.width;
+        const bottom = rect.top + rect.height;
+
+        // Past the left.
+        return pos.x > rect.left 
+            // Below the top.
+            && pos.y > rect.top 
+            // Not beyond the right.
+            && pos.x < right 
+            // And not past the bottom.
+            && pos.y < bottom;
+    }
+
+    mouseInRect(e) {        
+        return this.pointInRect({
+            x: e.pageX,
+            y: e.pageY
+        });
+    }
 }
 
 class gameToolBarButton {
@@ -227,11 +289,22 @@ class gameToolBarButton {
     image = new Image();
     x = 0;
     y = 0;
+    draggable = false;
 
-    constructor(imageLocation) {
-        let button = this;
+    // Private
+    __startX = 0;
+    __startY = 0;
+
+    constructor(canvas, imageLocation, draggable) {
+        //let button = this;
         this.image.src = imageLocation;
-        $(document).on('mousemove', function(e) { gameToolBarButton.__mouseMove(e, button); });
+        this.draggable = valueIsUndefined(draggable) ? false : draggable;
+
+        //canvas.onmousemove = function(e) { gameToolBarButton.__mouseMove(e, button); };
+        //canvas.on('mousemove', function(e) { gameToolBarButton.__mouseMove(e, button); }).onmouseup = myUp;
+        //canvas.on('mousemove', function(e) { gameToolBarButton.__mouseMove(e, button); })
+        
+        //.onmousemove = myMove;
 
     }
 
@@ -241,30 +314,48 @@ class gameToolBarButton {
         context.drawImage(this.image, this.x, this.y, this.width, this.height);
     }
 
-    static __mouseMove(e, button) {
+    getButtonClientRect(canvas) {
         const rect = canvas.getBoundingClientRect();
 
-        const x = rect.left + button.x;
-        const y = rect.top + button.y;
+        return {
+            x: rect.left + this.x,
+            y: rect.top + this.y,
+            width: this.width,
+            height: this.height
+        }
+    }
 
-        const cX = e.pageX;
-        const cY = e.pageY;
-        
-
-        // If pointer is hovering over the button.
-        canvas.style.cursor = gameToolBarButton.#pointInRect({
-            x: e.pageX,
-            y: e.pageY
-        }, {
-            left: x,
-            top: y,
-            width: button.width,
-            height: button.height
-        })
+    static __mouseMove(e, button) {
+        canvas.style.cursor = gameToolBarButton.mouseInRect(e, button)
             // Draw a pointer cursor.
             ? "pointer"
             // Otherwise, draw the default cursor.
             : "default";
+    }
+
+    static __mouseDown(e, button) {
+        // tell the browser we're handling this mouse event
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (button.draggable && gameToolBarButton.mouseInRect(e, button)) {
+            debugger;
+            // Tell the game object (perhaps through an event)
+            // that it now has an object in hand.
+            // Maybe make a new class to handle the logic of drag and dropping
+            // and what it should do.
+            // It neeeds to perform these steps:
+            // Clone button.
+            // And drag it around
+        }
+
+        // save the current mouse position
+        button.__startX = mouseX;
+        button.__startY = my;
+    }
+
+    static __mouseUp(e, button) {
+        // TODO
     }
 
     static #pointInRect(mousePos, buttonRect) {
@@ -279,5 +370,18 @@ class gameToolBarButton {
             && mousePos.x < right 
             // And not past the bottom.
             && mousePos.y < bottom;
+    }
+
+    static mouseInRect(e, button) {
+        const rect = button.getButtonClientRect(canvas);
+        return gameToolBarButton.#pointInRect({
+            x: e.pageX,
+            y: e.pageY
+        }, {
+            left: rect.x,
+            top: rect.y,
+            width: button.width,
+            height: button.height
+        });
     }
 }

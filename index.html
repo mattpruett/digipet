@@ -41,12 +41,14 @@
 		</style>
     </head>
     <body>
-		<h1>Digital Pet Showcase</h1>
-		<div class="row" id="game">
-			<!-- The game will be placed here when we call $("#game").initGame()-->
+		<div class="container body-content">			
+			<h1>Digital Pet Showcase</h1>
+			<div class="row" id="game">
+				<!-- The game will be placed here when we call $("#game").initGame()-->
+			</div>
+			<span id="coordinates" class="digital"></span><br>
+			<a href="other\thanks.html">Special Thanks</a>
 		</div>
-
-		<a href="other\thanks.html">Special Thanks</a>
 
         <script>
 			// TODO: Somehow move this call to game.js
@@ -66,6 +68,10 @@
 			function starvePet() {
 				cat.hunger.inc();
 				refreshPetStats();
+			}
+
+			function refreshCoordinates(x, y) {
+				$("#coordinates").html(`${x},${y}`);
 			}
         </script>
     </body>
