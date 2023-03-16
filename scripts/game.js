@@ -36,7 +36,6 @@ function initializeGame(frequencyMS) {
 
 class game {
     // Private
-    #timer = null;
     #totalTicks = 0;
 
     // Public
@@ -46,8 +45,7 @@ class game {
     pet = null;
     logger = null;
     toolBar = new gameToolBar();
-
-    // constructor
+    
     constructor() {
         this.logger = new gameLogger($("#pet-output"));
         this.pet = new Pet(this.logger, petType.cat);
@@ -71,35 +69,9 @@ class game {
         canvas.onmousemove = function(e) { game.__mouseMove(e, gameObject); };
     }
 
-    // Methods
-    setBackground(imgSource, width, height) {
-        this.background.src = imgSource;
-        // Another alies to make it all work.
-        let game = this;
-        // Make sure the image is loaded first otherwise nothing will draw.
-        this.background.onload = function() {
-            if (width && height) {
-                game.context.drawImage(game.background,0,0, width, height);
-            }
-            else {
-                game.context.drawImage(game.background,0,0);
-            }
-            game.drawToolbar();
-            game.pet.idle(game.context);
-        };
-    }
-
-    onBackgroundLoad() {
-        if (width && height) {
-            this.context.drawImage(this.background,0,0, width, height);
-        }
-        else {
-            this.context.drawImage(this.background,0,0);
-        }
-    }
-
-    refreshPetStats() {
-        $("#pet-stats").html(this.pet.toHtml());
+    // Public methods.
+    clearCanvas() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
     
     doGameLoop() {
@@ -120,20 +92,6 @@ class game {
         this.#totalTicks++;
     }
 
-    drawToolbar () {
-        this.toolBar.draw(this.context, 20, 20);
-    }
-
-    clearCanvas() {
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-
-    refresh() {
-        this.drawBackground();
-        this.pet.draw(this.context);
-        this.drawToolbar();
-    }
-
     drawBackground() {
         let width = $("#game-screen").innerWidth();
         let height = $("#game-screen").innerHeight();
@@ -141,12 +99,39 @@ class game {
         this.context.drawImage(this.background,0,0, width, height);
     }
 
+    drawToolbar () {
+        this.toolBar.draw(this.context, 20, 20);
+    }
+
+    refresh() {
+        this.drawBackground();
+        this.pet.draw(this.context);
+        this.drawToolbar();
+    }
+    refreshPetStats() {
+        $("#pet-stats").html(this.pet.toHtml());
+    }
+
+    setBackground(imgSource, width, height) {
+        this.background.src = imgSource;
+        // Another alies to make it all work.
+        let game = this;
+        // Make sure the image is loaded first otherwise nothing will draw.
+        this.background.onload = function() {
+            if (width && height) {
+                game.context.drawImage(game.background,0,0, width, height);
+            }
+            else {
+                game.context.drawImage(game.background,0,0);
+            }
+            game.drawToolbar();
+            game.pet.idle(game.context);
+        };
+    }
+
     start() {
         window.requestAnimationFrame(game.gameStep);
     }
-
-    // Mouse functions
-
 
     // Static functions.
     static gameRendered(frequency) {
@@ -159,6 +144,17 @@ class game {
         window.requestAnimationFrame(game.gameStep);
     }
 
+    // Events.
+    onBackgroundLoad() {
+        if (width && height) {
+            this.context.drawImage(this.background,0,0, width, height);
+        }
+        else {
+            this.context.drawImage(this.background,0,0);
+        }
+    }
+
+    // Static methods.
     static __mouseMove(e, game) {
         // Do we need to decide the default cursor here        
         canvas.style.cursor = "default";
@@ -176,35 +172,6 @@ class gameToolBar {
     posX = 5;
     posY = 5;
     margins = 5;
-
-    // Private
-    #toolbarWidth() {
-        let width = this.buttons.length  > 0 ? this.margins : 0;
-        for(let i = 0; i < this.buttons.length; i++) {
-            width += this.buttons[i].width + this.margins;
-        }
-        return width;
-    }
-
-    #toolbarHeight() {
-        let height = this.buttons.length > 0
-            // Find the button in our list with the largest height.
-            ? Math.max.apply(Math, this.buttons.map(function(btn) { return btn.height; }))
-            : 0;
-        // Margins x 2 = top and bottom.
-        return height + (this.margins * 2);
-    }
-
-    #toolbarRect() {
-        const rect = canvas.getBoundingClientRect();
-        
-        return {
-            left: rect.left + this.posX,
-            top: rect.top + this.posY,
-            width: this.#toolbarWidth(),
-            height: this.#toolbarHeight()
-        };
-    }
 
     addButton(button) {
         if (button instanceof gameToolBarButton) {
@@ -259,26 +226,42 @@ class gameToolBar {
     }
 
     // Mouse and similar helper functions
-    pointInRect(pos) {
-        const rect = this.#toolbarRect();
-        const right = rect.left + rect.width;
-        const bottom = rect.top + rect.height;
-
-        // Past the left.
-        return pos.x > rect.left 
-            // Below the top.
-            && pos.y > rect.top 
-            // Not beyond the right.
-            && pos.x < right 
-            // And not past the bottom.
-            && pos.y < bottom;
-    }
-
-    mouseInRect(e) {        
-        return this.pointInRect({
+    mouseInRect(e) {   
+        const point = {
             x: e.pageX,
             y: e.pageY
-        });
+        };
+        const rect = this.#toolbarRect();     
+        return pointInRect(point, rect);
+    }
+
+    // Private methods
+    #toolbarHeight() {
+        let height = this.buttons.length > 0
+            // Find the button in our list with the largest height.
+            ? Math.max.apply(Math, this.buttons.map(function(btn) { return btn.height; }))
+            : 0;
+        // Margins x 2 = top and bottom.
+        return height + (this.margins * 2);
+    }
+
+    #toolbarRect() {
+        const rect = canvas.getBoundingClientRect();
+        
+        return {
+            left: rect.left + this.posX,
+            top: rect.top + this.posY,
+            width: this.#toolbarWidth(),
+            height: this.#toolbarHeight()
+        };
+    }
+
+    #toolbarWidth() {
+        let width = this.buttons.length  > 0 ? this.margins : 0;
+        for(let i = 0; i < this.buttons.length; i++) {
+            width += this.buttons[i].width + this.margins;
+        }
+        return width;
     }
 }
 
@@ -291,7 +274,8 @@ class gameToolBarButton {
     y = 0;
     draggable = false;
 
-    // Private
+    // These should be private, but they will be referenced outside of the internal class code
+    // due to weird reasons with javascript. 
     __startX = 0;
     __startY = 0;
 
@@ -308,6 +292,7 @@ class gameToolBarButton {
 
     }
 
+    // Public methods
     draw(context, x, y) {
         this.x = x;
         this.y = y;
@@ -318,21 +303,14 @@ class gameToolBarButton {
         const rect = canvas.getBoundingClientRect();
 
         return {
-            x: rect.left + this.x,
-            y: rect.top + this.y,
+            left: rect.left + this.x,
+            top: rect.top + this.y,
             width: this.width,
             height: this.height
         }
     }
 
-    static __mouseMove(e, button) {
-        canvas.style.cursor = gameToolBarButton.mouseInRect(e, button)
-            // Draw a pointer cursor.
-            ? "pointer"
-            // Otherwise, draw the default cursor.
-            : "default";
-    }
-
+    // Public static methods and events
     static __mouseDown(e, button) {
         // tell the browser we're handling this mouse event
         e.preventDefault();
@@ -358,30 +336,20 @@ class gameToolBarButton {
         // TODO
     }
 
-    static #pointInRect(mousePos, buttonRect) {
-        const right = buttonRect.left + buttonRect.width;
-        const bottom = buttonRect.top + buttonRect.height;
-
-        // Past the left.
-        return mousePos.x > buttonRect.left 
-            // Below the top.
-            && mousePos.y > buttonRect.top 
-            // Not beyond the right.
-            && mousePos.x < right 
-            // And not past the bottom.
-            && mousePos.y < bottom;
+    static __mouseMove(e, button) {
+        canvas.style.cursor = gameToolBarButton.mouseInRect(e, button)
+            // Draw a pointer cursor.
+            ? "pointer"
+            // Otherwise, draw the default cursor.
+            : "default";
     }
 
     static mouseInRect(e, button) {
-        const rect = button.getButtonClientRect(canvas);
-        return gameToolBarButton.#pointInRect({
+        const point = {
             x: e.pageX,
             y: e.pageY
-        }, {
-            left: rect.x,
-            top: rect.y,
-            width: button.width,
-            height: button.height
-        });
+        };
+        const rect = button.getButtonClientRect(canvas);
+        return pointInRect(point, rect);
     }
 }
