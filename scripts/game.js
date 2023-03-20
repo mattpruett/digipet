@@ -9,7 +9,7 @@ var gameLoop;
 // Helper functions.
 
 // This should allow us to take a div and call it like a Jquery method.
-function initializeGame(frequencyMS) {
+function initializeGame() {
     let container = $('<div style="width:100%;">');
     container.append($('<input type="button" value="Feed Pet" onclick="feedPet();"/>'));
     container.append($('<input type="button" value="Starve Pet" onclick="starvePet();"/>'));
@@ -21,7 +21,7 @@ function initializeGame(frequencyMS) {
     '   <canvas id="canvas" height="400" style="border:1px solid lightgray;background-color: lightpink;">'+
     '       Your browser does not support the HTML5 canvas tag.'+
     '   </canvas>'+
-    `   <script>game.gameRendered(${frequencyMS});</script>`+
+    `   <script>game.gameRendered();</script>`+
     '</div>'));
 
     let gameLog = $('<div class="col-md-4" id="pet-output">');
@@ -30,7 +30,6 @@ function initializeGame(frequencyMS) {
     container.append(content);
 
     this.append(container);
-    frameFrequency = frequencyMS;
     return this;
 };
 
@@ -42,10 +41,11 @@ class game {
     background = new Image();
     canvas = null;
     context = null;
-    pet = null;
+    dragTool = null;
     logger = null;
+    pet = null;
     toolBar = new gameToolBar();
-    
+
     constructor() {
         this.logger = new gameLogger($("#pet-output"));
         this.pet = new Pet(this.logger, petType.cat);
@@ -60,18 +60,25 @@ class game {
 
         this.pet.setLocation({x: 400, y: 300});
         
-        this.toolBar.addButton(new gameToolBarButton(this.canvas, "assets/other/hamburger.png", true));
-        
+        this.#initializeToolbar();
+
         this.setBackground("assets/backgrounds/livingroom/livingroom.jpg", width, height);
 
         let gameObject = this;
         // Set events
-        canvas.onmousemove = function(e) { game.__mouseMove(e, gameObject); };
+        canvas.onmousedown = function(e) { e.canvas = canvas; e.game = gameObject; game.__mouseDown(e); };
+        canvas.onmousemove = function(e) { e.canvas = canvas; e.game = gameObject; game.__mouseMove(e); };
+        canvas.onmouseout = function(e) { gameObject.clearDragTool(); };
+        canvas.onmouseup = function(e) { e.canvas = canvas; e.game = gameObject; game.__mouseUp(e); };
     }
 
     // Public methods.
     clearCanvas() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    clearDragTool() {
+        this.dragTool = null;
     }
     
     doGameLoop() {
@@ -107,6 +114,9 @@ class game {
         this.drawBackground();
         this.pet.draw(this.context);
         this.drawToolbar();
+        if (this.dragTool) {
+            this.dragTool.draw(this.context);
+        }
     }
     refreshPetStats() {
         $("#pet-stats").html(this.pet.toHtml());
@@ -129,12 +139,33 @@ class game {
         };
     }
 
+    setDragTool(tool) {
+        this.dragTool = tool;
+    }
+
     start() {
         window.requestAnimationFrame(game.gameStep);
     }
 
+    // Private functions
+    #initializeToolbar() {
+        let feedingButton = new gameToolBarButton(this.canvas, "assets/other/hamburger.png", true);
+        this.toolBar.addButton(feedingButton);
+        gameTool.createFromAndApplyToButton(feedingButton, true, gameToolType.feed);
+    }
+
+    updateDragToolCoordiates(mouseX, mouseY) {
+        // if the drag flag is set, clear the canvas and draw the image
+        if(this.dragTool != null) {
+            let pos = mouseToCanvasPosition(this.canvas, mouseX, mouseY);
+
+            this.dragTool.x = pos.x;
+            this.dragTool.y = pos.y;
+        }
+    }
+
     // Static functions.
-    static gameRendered(frequency) {
+    static gameRendered() {
         gameLoop = new game();
         gameLoop.start();        
     }
@@ -155,13 +186,32 @@ class game {
     }
 
     // Static methods.
-    static __mouseMove(e, game) {
-        // Do we need to decide the default cursor here        
+    static __mouseDown(e) {
+        if (e.game.toolBar.mouseInRect(e)) {
+            e.game.toolBar.handleMouseDown(e);
+        }
+    }
+
+    static __mouseMove(e) {
+        // Do we need to decide the default cursor here
         canvas.style.cursor = "default";
         refreshCoordinates(e.pageX, e.pageY);
-        if (game.toolBar.mouseInRect(e)) {
-            e.game = game;
-            game.toolBar.handleMouseMove(e);
+        // We are dragging here.
+        if (e.game.dragTool != null) {
+            e.game.updateDragToolCoordiates(e.clientX, e.clientY);
+        }
+        else if (e.game.toolBar.mouseInRect(e)) {
+            e.game.toolBar.handleMouseMove(e);
+        }
+    }
+
+    static __mouseUp(e) {
+        // Do we need to decide the default cursor here
+        if (e.game.toolBar.mouseInRect(e)) {
+            e.game.toolBar.handleMouseMove(e);
+        }
+        else {
+            e.game.clearDragTool();
         }
     }
 }
@@ -186,6 +236,15 @@ class gameToolBar {
     }
 
     // Event responses
+    handleMouseDown(e) {
+        for(let i = 0; i < this.buttons.length; i++) {
+            if (gameToolBarButton.mouseInRect(e, this.buttons[i])) {
+                this.buttons[i].__mouseDown(e);
+                return;
+            }
+        }
+    }
+
     handleMouseMove(e) {
         for(let i = 0; i < this.buttons.length; i++) {
             if (gameToolBarButton.mouseInRect(e, this.buttons[i])) {
@@ -272,17 +331,11 @@ class gameToolBarButton {
     image = new Image();
     x = 0;
     y = 0;
-    draggable = false;
+    tool = null;
 
-    // These should be private, but they will be referenced outside of the internal class code
-    // due to weird reasons with javascript. 
-    __startX = 0;
-    __startY = 0;
-
-    constructor(canvas, imageLocation, draggable) {
+    constructor(canvas, imageLocation) {
         //let button = this;
         this.image.src = imageLocation;
-        this.draggable = valueIsUndefined(draggable) ? false : draggable;
 
         //canvas.onmousemove = function(e) { gameToolBarButton.__mouseMove(e, button); };
         //canvas.on('mousemove', function(e) { gameToolBarButton.__mouseMove(e, button); }).onmouseup = myUp;
@@ -310,30 +363,26 @@ class gameToolBarButton {
         }
     }
 
-    // Public static methods and events
-    static __mouseDown(e, button) {
+    // These should be private, but we propagate them from the toolbar.
+    __mouseDown(e) {
         // tell the browser we're handling this mouse event
+        /*
         e.preventDefault();
         e.stopPropagation();
+        */
 
-        if (button.draggable && gameToolBarButton.mouseInRect(e, button)) {
-            debugger;
-            // Tell the game object (perhaps through an event)
-            // that it now has an object in hand.
-            // Maybe make a new class to handle the logic of drag and dropping
-            // and what it should do.
-            // It neeeds to perform these steps:
-            // Clone button.
-            // And drag it around
+        if (this.tool && this.tool.draggable && e.game) {
+            // Tell the game object that it now has an object in hand.
+            e.game.setDragTool(this.tool);
         }
-
-        // save the current mouse position
-        button.__startX = mouseX;
-        button.__startY = my;
     }
 
-    static __mouseUp(e, button) {
-        // TODO
+    // Public static methods and events
+
+    static __mouseUp(e) {
+        if (e.game && e.game.dragTool) {
+            e.game.clearDragTool();
+        }
     }
 
     static __mouseMove(e, button) {

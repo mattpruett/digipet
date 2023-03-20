@@ -19,3 +19,12 @@ function pointInRect(point, rect) {
         // And not past the bottom.
         && point.y < bottom;
 }
+
+function mouseToCanvasPosition(canvas, mouseX, mouseY) {
+    var offset = $(canvas).offset();
+    
+    return {
+        x: parseInt(mouseX - offset.left),
+        y: parseInt(mouseY - offset.top)
+    }
+}
