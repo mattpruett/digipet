@@ -74,6 +74,10 @@
 			function refreshCoordinates(x, y) {
 				$("#coordinates").html(`${x},${y}`);
 			}
+
+			function killPet() {
+				gameLoop.pet.kill();
+			}
         </script>
     </body>
 </html>

@@ -124,7 +124,7 @@ class spriteSheet {
             height);
 
 
-        return { x: canvasX, y: canvasY };
+        return { x: canvasX, y: canvasY, width: width, height: height };
     }
 
     #spriteInView(context, x, y) {
@@ -235,5 +235,24 @@ class sprite {
             doMove: true
         });
         return cat;
+    }
+
+    static tombstone() {
+        let tombstone = new sprite();
+        const tsHeight = 54;
+        const tsWidth = 55;
+        const tsScale = 1.1;
+
+        tombstone.addSheet(spriteAnimationType.idle, "assets/other/tombstone.png", {
+            offsetX: 0,
+            offsetY: 0,
+            height: tsHeight,
+            width: tsWidth,
+            frameCount: 1,
+            scale: tsScale,
+            speed: 0,
+            doMove: false
+        });
+        return tombstone;
     }
 }

@@ -13,6 +13,7 @@ function initializeGame() {
     let container = $('<div style="width:100%;">');
     container.append($('<input type="button" value="Feed Pet" onclick="feedPet();"/>'));
     container.append($('<input type="button" value="Starve Pet" onclick="starvePet();"/>'));
+    container.append($('<input type="button" value="Kill Pet" onclick="killPet();"/>'));
     container.append($('<div id="pet-stats" style="width:100%" class="digital"></div><br/>'));
 
     let content = $('<div class="row">');
@@ -24,6 +25,7 @@ function initializeGame() {
     `   <script>game.gameRendered();</script>`+
     '</div>'));
 
+    // TODO: Make the game log scrollable and don't allow for resize when content gets too big.
     let gameLog = $('<div class="col-md-4" id="pet-output">');
     content.append(gameLog);
 
@@ -50,6 +52,7 @@ class game {
         this.logger = new gameLogger($("#pet-output"));
         this.pet = new Pet(this.logger, petType.cat);
         this.pet.name = "Link";
+        this.pet.game = this;
         this.refreshPetStats();
         this.canvas = document.getElementById('canvas');
         this.context = canvas.getContext('2d');
@@ -110,6 +113,10 @@ class game {
         this.toolBar.draw(this.context, 20, 20);
     }
 
+    mouseOverPet(e) {
+        return this.pet.mouseInRect(e);
+    }
+
     refresh() {
         this.drawBackground();
         this.pet.draw(this.context);
@@ -118,6 +125,7 @@ class game {
             this.dragTool.draw(this.context);
         }
     }
+
     refreshPetStats() {
         $("#pet-stats").html(this.pet.toHtml());
     }
@@ -186,6 +194,8 @@ class game {
     }
 
     // Static methods.
+
+    // Mouse methods.
     static __mouseDown(e) {
         if (e.game.toolBar.mouseInRect(e)) {
             e.game.toolBar.handleMouseDown(e);
@@ -199,6 +209,11 @@ class game {
         // We are dragging here.
         if (e.game.dragTool != null) {
             e.game.updateDragToolCoordiates(e.clientX, e.clientY);
+            if (e.game.mouseOverPet(e)) {
+                // TODO
+                e.game.pet.feed();
+                e.game.clearDragTool();
+            }
         }
         else if (e.game.toolBar.mouseInRect(e)) {
             e.game.toolBar.handleMouseMove(e);
@@ -336,13 +351,6 @@ class gameToolBarButton {
     constructor(canvas, imageLocation) {
         //let button = this;
         this.image.src = imageLocation;
-
-        //canvas.onmousemove = function(e) { gameToolBarButton.__mouseMove(e, button); };
-        //canvas.on('mousemove', function(e) { gameToolBarButton.__mouseMove(e, button); }).onmouseup = myUp;
-        //canvas.on('mousemove', function(e) { gameToolBarButton.__mouseMove(e, button); })
-        
-        //.onmousemove = myMove;
-
     }
 
     // Public methods
@@ -366,6 +374,7 @@ class gameToolBarButton {
     // These should be private, but we propagate them from the toolbar.
     __mouseDown(e) {
         // tell the browser we're handling this mouse event
+        e.preventDefault();
         /*
         e.preventDefault();
         e.stopPropagation();

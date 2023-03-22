@@ -37,7 +37,8 @@ class gameTool {
 
     }
 
-    // Interacts with an other object
+    // Interacts with an other object.
+    // TODO: Make use of this.
     onDragOverAnotherObject(obj) {
         if (obj instanceof Pet) {
             obj.__toolDraggedOver(this);

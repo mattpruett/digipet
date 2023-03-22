@@ -204,7 +204,10 @@ class Pet {
     bowels = null;
     outputLocation = null;
     sprite = null;
+    deathSprite = null;
     state = petState.walking;
+    game = null;
+    isDead = false;
 
     #location = { x: 0, y: 0 };
     #totalTicks = 0;
@@ -240,10 +243,15 @@ class Pet {
         if (this.type === petType.cat) {
             this.sprite = sprite.cat();
         }
+        this.deathSprite = sprite.tombstone();
     }
 
     feed() {
-        this.hunger.dec();
+        if (!this.isDead) {
+            this.hunger.dec();
+            this.refreshStats();
+            this.do(`${this.name} ate some food.`);
+        }
     }
 
     // Event implimentations
@@ -332,16 +340,18 @@ class Pet {
         this.do(`${this.name} cheers! Hurray!`);
     }
 
+    cry() {
+        this.do(`${this.name} cries! Boohoo.`);
+    }
+
     dance() {
         this.do(`${this.name} dances a happy little dance`);
     }
 
     die() {
         this.do(`${this.name} died! RIP`);
-    }
-
-    cry() {
-        this.do(`${this.name} cries! Boohoo.`);
+        this.health.value = 0;
+        this.isDead = true;
     }
 
     idle(context) {
@@ -354,6 +364,10 @@ class Pet {
         let pos = this.#getCurrentPosition();
         
         this.sprite.eyeShift(context, pos.x, pos.y);
+    }
+
+    kill() {
+        this.die();
     }
 
     move(context, where) {
@@ -369,6 +383,11 @@ class Pet {
     }
 
     drawState(context) {
+        // If we are dead, ignore any state change and just draw our death sprite.
+        if (this.isDead) {
+            this.drawDeathSprite(context);
+            return;
+        }
         this.#checkForStateChange();
         switch (this.state) {
             case petState.idling:
@@ -381,6 +400,12 @@ class Pet {
                 this.eyeShift(context, this.#currentDirection);
                 break;
         }
+    }
+
+    drawDeathSprite(context) {
+        let pos = this.#getCurrentPosition();
+        
+        this.deathSprite.idle(context, pos.x, pos.y);
     }
 
     getStatsAsHtml() {
@@ -418,6 +443,21 @@ class Pet {
     // Some helper methods and overrides
     getStatsAsString() {
         return `${this.name}\r\n\tHealth: ${this.health}\r\n\tHunger: ${this.hunger}\r\n\tHappiness ${this.happiness}\r\n\tBowels: ${this.bowels}`;
+    }
+
+    mouseInRect(e) {
+        const point = {
+            x: e.pageX,
+            y: e.pageY
+        };
+        const rect = this.#getRect(e.canvas);     
+        return pointInRect(point, rect);
+    }
+
+    refreshStats() {
+        if (this.game != null) {
+            this.game.refreshPetStats();
+        }
     }
 
     toString() {
@@ -463,10 +503,22 @@ class Pet {
         return this.#location;
     }
 
+    #getRect(canvas) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            left: rect.left + this.#location.x,
+            top: rect.top + this.#location.y,
+            width: this.#location.width,
+            height: this.#location.height
+        };
+    }
+
     #setCurrentPosition(pos) {
-        if (!(valueIsUndefined(pos) || valueIsUndefined(pos.x) || valueIsUndefined(pos.y))) {
-            this.#location.x = pos.x;
-            this.#location.y = pos.y;
+        if (!valueIsUndefined(pos)) {
+            this.#location.x = valueIsUndefined(pos.x) ? this.#location.x : pos.x;
+            this.#location.y = valueIsUndefined(pos.y) ? this.#location.y : pos.y;
+            this.#location.width = valueIsUndefined(pos.width) ? this.#location.width : pos.width;
+            this.#location.height = valueIsUndefined(pos.height) ? this.#location.height : pos.height;
         }
     }
     
