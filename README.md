@@ -10,7 +10,6 @@ This project is far from complete. I hope to one day finish it up but the primar
 ## ToDo:
 * Add amination/state for pooping (I cannot believe that's something I had to write.)
 * Add ability to clean said poo.
-* Add ability to name pet
 * Add reset button
 * State transitions could use some serious smoothing out. It's very sudden and the sprite does not end up exactly where it was from the previous state.
 * Add happy emote

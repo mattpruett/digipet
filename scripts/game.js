@@ -9,7 +9,7 @@ var gameLoop;
 // Helper functions.
 
 // This should allow us to take a div and call it like a JQuery method.
-function initializeGame() {
+function initializeGame(petName) {
     let container = $('<div style="width:100%;">');
     /*
     // Undo these when we need to test something.
@@ -25,7 +25,7 @@ function initializeGame() {
     '   <canvas id="canvas" height="400" style="border:1px solid lightgray;background-color: lightpink;">'+
     '       Your browser does not support the HTML5 canvas tag.'+
     '   </canvas>'+
-    `   <script>game.gameRendered();</script>`+
+    `   <script>game.gameRendered("${petName}");</script>`+
     '</div>'));
 
     // TODO: Make the game log scrollable and don't allow for resize when content gets too big.
@@ -51,10 +51,10 @@ class game {
     pet = null;
     toolBar = new gameToolBar();
 
-    constructor() {
+    constructor(petName) {
         this.logger = new gameLogger($("#pet-output"));
         this.pet = new Pet(this.logger, petType.cat);
-        this.pet.name = "Link";
+        this.pet.name = petName;
         this.pet.game = this;
         this.refreshPetStats();
         this.canvas = document.getElementById('canvas');
@@ -176,8 +176,8 @@ class game {
     }
 
     // Static functions.
-    static gameRendered() {
-        gameLoop = new game();
+    static gameRendered(petName) {
+        gameLoop = new game(petName);
         gameLoop.start();        
     }
 

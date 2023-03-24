@@ -39,13 +39,34 @@
 				padding-left: 9px;
 				padding-right: 4px;
 			}
+
+			button {
+				padding-left: 10px;
+				padding-right: 10px;
+				padding-bottom: 5px;
+			}
+
+			.left-label {
+				margin-right: 7px;
+			}
+
+			input, button {
+				height: 28px;
+				margin-right: 7px;
+			}
 		</style>
     </head>
     <body>
 		<div class="container body-content">			
 			<h1>Digital Pet Showcase</h1>
 			<div class="row" id="game">
-				<!-- The game will be placed here when we call $("#game").initGame()-->
+				<!-- The game will be placed here when we call $("#game").initializeGame()-->
+				
+				<p>
+					<label for="pet-name" class="left-label">Pet Name </label>
+					<input type="text" id="pet-name" name="pet-name" onkeypress=""><br><br>
+					<button id="start" onclick="startGame();">Start</button>
+				</p>
 			</div>
 			<span id="coordinates" class="digital"></span><br>
 			<a href="other\thanks.html">Special Thanks</a>
@@ -53,13 +74,18 @@
 
         <script>
 			// TODO: Somehow move this call to game.js
-			jQuery.fn.initGame = initializeGame;
-			$(function() {
-				const timerTickMS = 1000;
-				$("#game").initGame(timerTickMS);
-			});
+			jQuery.fn.initializeGame = initializeGame;
 			
 			"use strict";
+
+			$(function() {
+				$("#pet-name").on("keypress", function(e) {
+					if (e.key === "Enter") {
+						e.preventDefault();
+						$("#start").click();
+					}
+				});
+			});
 
 			function feedPet() {
 				cat.feed();
@@ -77,6 +103,14 @@
 
 			function killPet() {
 				gameLoop.pet.kill();
+			}
+
+			function startGame() {
+				let petName = $("#pet-name").val();
+				if (petName) {
+					$("#game").html('');
+					$("#game").initializeGame(petName);
+				}
 			}
         </script>
     </body>
