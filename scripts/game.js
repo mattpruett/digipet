@@ -8,12 +8,15 @@ var gameLoop;
 
 // Helper functions.
 
-// This should allow us to take a div and call it like a Jquery method.
+// This should allow us to take a div and call it like a JQuery method.
 function initializeGame() {
     let container = $('<div style="width:100%;">');
+    /*
+    // Undo these when we need to test something.
     container.append($('<input type="button" value="Feed Pet" onclick="feedPet();"/>'));
     container.append($('<input type="button" value="Starve Pet" onclick="starvePet();"/>'));
     container.append($('<input type="button" value="Kill Pet" onclick="killPet();"/>'));
+    */
     container.append($('<div id="pet-stats" style="width:100%" class="digital"></div><br/>'));
 
     let content = $('<div class="row">');
