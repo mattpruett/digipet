@@ -61,12 +61,6 @@
 			<h1>Digital Pet Showcase</h1>
 			<div class="row" id="game">
 				<!-- The game will be placed here when we call $("#game").initializeGame()-->
-				
-				<p>
-					<label for="pet-name" class="left-label">Pet Name </label>
-					<input type="text" id="pet-name" name="pet-name" onkeypress=""><br><br>
-					<button id="start" onclick="startGame();">Start</button>
-				</p>
 			</div>
 			<span id="coordinates" class="digital"></span><br>
 			<a href="other\thanks.html">Special Thanks</a>
@@ -79,12 +73,7 @@
 			"use strict";
 
 			$(function() {
-				$("#pet-name").on("keypress", function(e) {
-					if (e.key === "Enter") {
-						e.preventDefault();
-						$("#start").click();
-					}
-				});
+				$("#game").initializeGame();
 			});
 
 			function feedPet() {
@@ -103,14 +92,6 @@
 
 			function killPet() {
 				gameLoop.pet.kill();
-			}
-
-			function startGame() {
-				let petName = $("#pet-name").val();
-				if (petName) {
-					$("#game").html('');
-					$("#game").initializeGame(petName);
-				}
 			}
         </script>
     </body>

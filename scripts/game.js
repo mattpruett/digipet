@@ -5,37 +5,19 @@
 
 // Some globals.
 var gameLoop;
-
+var gameContent;
 // Helper functions.
 
 // This should allow us to take a div and call it like a JQuery method.
-function initializeGame(petName) {
-    let container = $('<div style="width:100%;">');
-    /*
-    // Undo these when we need to test something.
-    container.append($('<input type="button" value="Feed Pet" onclick="feedPet();"/>'));
-    container.append($('<input type="button" value="Starve Pet" onclick="starvePet();"/>'));
-    container.append($('<input type="button" value="Kill Pet" onclick="killPet();"/>'));
-    */
-    container.append($('<div id="pet-stats" style="width:100%" class="digital"></div><br/>'));
-
-    let content = $('<div class="row">');
-    content.append($(
-    '<div class="col-md-8" id="game-screen">'+
-    '   <canvas id="canvas" height="400" style="border:1px solid lightgray;background-color: lightpink;">'+
-    '       Your browser does not support the HTML5 canvas tag.'+
-    '   </canvas>'+
-    `   <script>game.gameRendered("${petName}");</script>`+
-    '</div>'));
-
-    // TODO: Make the game log scrollable and don't allow for resize when content gets too big.
-    let gameLog = $('<div class="col-md-4" id="pet-output">');
-    content.append(gameLog);
-
-    container.append(content);
-
-    this.append(container);
-    return this;
+function initializeGame() {
+    this.append($('<div style="width:100%;"><p>'+
+    '   <label for="pet-name" class="left-label">Pet Name </label>'+
+    '    <input type="text" id="pet-name" name="pet-name" onkeypress="game.petNameEditKeyPressed"><br><br>'+
+    '    <button id="start" onclick="game.startGame();">Start</button>'+
+    '    <script>game.setPetNameKeyPressEvent();</script>'+
+    '</p></div>'));
+    gameContent = this;
+    return gameContent;
 };
 
 class game {
@@ -197,6 +179,48 @@ class game {
     }
 
     // Static methods.
+    static setPetNameKeyPressEvent() {
+        $("#pet-name").on("keypress", function(e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                $("#start").click();
+            }
+        });
+    }
+
+    static startGame() {
+        let petName = $("#pet-name").val();
+        if (petName) {
+            gameContent.html('');
+            game.createContent(petName);
+        }
+    }
+
+    static createContent(petName) {
+        let container = $('<div style="width:100%;">');
+        /*
+        // Undo these when we need to test something.
+        container.append($('<input type="button" value="Feed Pet" onclick="feedPet();"/>'));
+        container.append($('<input type="button" value="Starve Pet" onclick="starvePet();"/>'));
+        container.append($('<input type="button" value="Kill Pet" onclick="killPet();"/>'));
+        */
+        container.append($('<div id="pet-stats" style="width:100%" class="digital"></div><br/>'));
+
+        let content = $('<div class="row">');
+        content.append($(
+        '<div class="col-md-8" id="game-screen">'+
+        '   <canvas id="canvas" height="400" style="border:1px solid lightgray;background-color: lightpink;">'+
+        '       Your browser does not support the HTML5 canvas tag.'+
+        '   </canvas>'+
+        `   <script>game.gameRendered("${petName}");</script>`+
+        '</div>'));
+
+        // TODO: Make the game log scrollable and don't allow for resize when content gets too big.
+        let gameLog = $('<div class="col-md-4" id="pet-output">');
+        content.append(gameLog);
+        container.append(content);
+        gameContent.append(container);
+    }
 
     // Mouse methods.
     static __mouseDown(e) {
